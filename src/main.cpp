@@ -94,7 +94,7 @@ int GetCoinbase_maturity()
     if (fTestNet_config && mapArgs.count("-coinbase_maturity"))
        {
            int ncoinbase_maturity = atoi(mapArgs["-coinbase_maturity"]);
-           //printf("COINBASE_MATURITY = %u set in config tenebrix.config \n",ncoinbase_maturity);          
+           //printf("COINBASE_MATURITY = %u set in config fbx.conf \n",ncoinbase_maturity);
            return atoi(mapArgs["-coinbase_maturity"]);                    
        }
        else
@@ -113,7 +113,7 @@ int GetArgIntxx(int udefault, const char* argument)
         stringstream convert(mapArgs[argument]);
         if ( !(convert >> uvalue)) 
             uvalue = 0;
-        printf("argument %s  found in tenebrix.conf with uint %u being used  \n",argument,uvalue);
+        printf("argument %s  found in fbx.conf with uint %u being used  \n",argument,uvalue);
         return uvalue;
     }
     return udefault;
@@ -129,7 +129,7 @@ int64 GetArgmInt64(int64 udefault,const char* argument)
         stringstream convert(mapArgs[argument]);
         if ( !(convert >> uvalue)) 
             uvalue = 0;
-        printf("argument %s  found in tenebrix.conf with uint %u being used  \n",argument,uvalue);
+        printf("argument %s  found in fbx.conf with uint %u being used  \n",argument,uvalue);
         return uvalue;
     }
     return udefault;
@@ -144,7 +144,7 @@ char* GetArgString(const char* strdefault,const char* argument)
         char * strFound;
         //strcpy(strFound, mapArgs[argument]); 
         strFound = mapArgs[argument].c_str;  
-        printf("argument %s found in tenebrix.conf with string %s being used \n",argument,strFound);
+        printf("argument %s found in fbx.conf with string %s being used \n",argument,strFound);
         //return mapArgs[argument];
         return strFound;
     }
@@ -441,7 +441,7 @@ bool CTransaction::AcceptToMemoryPool(CTxDB& txdb, bool fCheckInputs, bool* pfMi
 
 
     // Rather not work on nonstandard transactions
-    // to enable running scripts add -nonstandard in tenebrix.conf by sacarlson
+    // to enable running scripts add -nonstandard in fbx.conf by sacarlson
     if (!fTestNet && !IsStandard())
     {
         if (!mapArgs.count("-nonstandard"))
@@ -1591,7 +1591,7 @@ bool LoadBlockIndex(bool fAllowNew)
         if (fTestNet_config && mapArgs.count("-genesisblock"))
         {
             hashGenesisBlock = uint256(mapArgs["-genesisblock"]);
-            printf("hashGenesisBlock custom configured by -genesisblock in tenebrix.conf \n");
+            printf("hashGenesisBlock custom configured by -genesisblock in fbx.conf \n");
         }
         else
         {
@@ -1685,7 +1685,7 @@ bool LoadBlockIndex(bool fAllowNew)
             stringstream convert(mapArgs["-block_nTime"]);
             if ( !(convert >> block.nTime)) 
                 block.nTime = 0;
-            printf("block.nTime custom configured by -block_nTime in tenebrix.conf \n");
+            printf("block.nTime custom configured by -block_nTime in fbx.conf \n");
        }
              
        if (fTestNet_config && mapArgs.count("-block_nBits"))
@@ -1693,7 +1693,7 @@ bool LoadBlockIndex(bool fAllowNew)
            stringstream convert(mapArgs["-block_nBits"]);
            if ( !(convert >> block.nBits)) 
                block.nBits = 0;
-           printf("block.nBits custom configured by -block_nBits in tenebrix.conf \n");
+           printf("block.nBits custom configured by -block_nBits in fbx.conf \n");
        }
          
        if (fTestNet_config && mapArgs.count("-block_nNonce"))
@@ -1701,7 +1701,7 @@ bool LoadBlockIndex(bool fAllowNew)
            stringstream convert(mapArgs["-block_nNonce"]);
            if ( !(convert >> block.nNonce)) 
                block.nNonce = 0;
-           printf("block.nNonce custom configured by -block_nNonce in tenebrix.conf \n");
+           printf("block.nNonce custom configured by -block_nNonce in fbx.conf \n");
        }
          
        printf("block.nTime = %u \n", block.nTime);
@@ -1745,7 +1745,7 @@ bool LoadBlockIndex(bool fAllowNew)
         if (fTestNet_config && mapArgs.count("-block_hashMerkleRoot"))
         {
             assert(block.hashMerkleRoot == uint256(mapArgs["-block_hashMerkleRoot"].c_str()));
-            printf("block.hashMerkleRoot custom configured by -block_hashMerkleRoot in tenebrix.conf \n");
+            printf("block.hashMerkleRoot custom configured by -block_hashMerkleRoot in fbx.conf \n");
         }
         else
         {

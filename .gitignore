@@ -1,5 +1,5 @@
 src/*.exe
-src/bitcoin
-src/bitcoind
+src/fairbrix
+src/fairbrixd
 .*.swp
 *.*~*

@@ -2,11 +2,11 @@
 # Distributed under the MIT/X11 software license, see the accompanying
 # file license.txt or http://www.opensource.org/licenses/mit-license.php.
 
-# Mac OS X makefile for bitcoin
+# Mac OS X makefile for fairbrix
 # Laszlo Hanyecz (solar@heliacal.net)
 
 CXX=llvm-g++
-DEPSDIR=/Users/macosuser/bitcoin/deps
+DEPSDIR=/Users/charlie/bitcoin/deps
 
 INCLUDEPATHS= \
  -I"$(DEPSDIR)/include"
@@ -29,7 +29,7 @@ DEFS=$(shell $(DEPSDIR)/bin/wx-config --cxxflags) -D__WXMAC_OSX__ -DNOPCH -DMSG_
 
 DEBUGFLAGS=-g -DwxDEBUG_LEVEL=0
 # ppc doesn't work because we don't support big-endian
-CFLAGS=-mmacosx-version-min=10.5 -arch i386 -arch x86_64 -O3 -Wno-invalid-offsetof -Wformat $(DEBUGFLAGS) $(DEFS) $(INCLUDEPATHS)
+CFLAGS=-mmacosx-version-min=10.6 -arch i386 -arch x86_64 -O3 -Wno-invalid-offsetof -Wformat $(DEBUGFLAGS) $(DEFS) $(INCLUDEPATHS)
 HEADERS=headers.h strlcpy.h serialize.h uint256.h util.h key.h bignum.h base58.h \
     script.h scrypt.h db.h net.h irc.h keystore.h main.h wallet.h rpc.h uibase.h ui.h noui.h init.h
 
@@ -48,20 +48,20 @@ OBJS= \
     cryptopp/obj/sha.o \
     cryptopp/obj/cpu.o
 
-bitcoin: USE_UPNP:=1
+fairbrix: USE_UPNP:=1
 	ifdef USE_UPNP
 		LIBS += $(DEPSDIR)/lib/libminiupnpc.a
 		DEFS += -DUSE_UPNP=$(USE_UPNP)
 	endif
 
-bitcoind: USE_UPNP:=0
+fairbrixd: USE_UPNP:=0
 	ifdef USE_UPNP
 		LIBS += $(DEPSDIR)/lib/libminiupnpc.a
 		DEFS += -DUSE_UPNP=$(USE_UPNP)
 	endif
 	
 
-all: bitcoin
+all: fairbrix
 
 
 obj/%.o: %.cpp $(HEADERS)
@@ -70,7 +70,7 @@ obj/%.o: %.cpp $(HEADERS)
 cryptopp/obj/%.o: cryptopp/%.cpp
 	$(CXX) -c $(CFLAGS) -O3 -DCRYPTOPP_DISABLE_ASM -o $@ $<
 
-bitcoin: $(OBJS) obj/ui.o obj/uibase.o
+fairbrix: $(OBJS) obj/ui.o obj/uibase.o
 	$(CXX) $(CFLAGS) -o $@ $(LIBPATHS) $^ $(WXLIBS) $(LIBS)
 
 obj/nogui/scrypt.o: scrypt.c
@@ -79,17 +79,17 @@ obj/nogui/scrypt.o: scrypt.c
 obj/nogui/%.o: %.cpp $(HEADERS)
 	$(CXX) -c $(CFLAGS) -o $@ $<
 
-bitcoind: $(OBJS:obj/%=obj/nogui/%)
+fairbrixd: $(OBJS:obj/%=obj/nogui/%)
 	$(CXX) $(CFLAGS) -o $@ $(LIBPATHS) $^ $(LIBS)
 
 obj/test/%.o: test/%.cpp $(HEADERS)
 	$(CXX) -c $(CFLAGS) -o $@ $<
 
-test_bitcoin: obj/test/test_bitcoin.o
+test_fairbrix: obj/test/test_fairbrix.o
 	$(CXX) $(CFLAGS) -o $@ $(LIBPATHS) $^ $(LIBS) -lboost_unit_test_framework
 
 clean:
-	-rm -f bitcoin bitcoind test_bitcoin
+	-rm -f fairbrix fairbrixd test_fairbrix
 	-rm -f obj/*.o
 	-rm -f obj/nogui/*.o
 	-rm -f obj/test/*.o

@@ -250,8 +250,8 @@ make install
 
 Now you should be able to build bitcoin
 
-cd ~/bitcoin/src
-make -f makefile.osx bitcoin
+cd ~/fairbrix/src
+make -f makefile.osx fairbrix
 
 Before you can run it, you need to create an application bundle for Mac OS.
 
