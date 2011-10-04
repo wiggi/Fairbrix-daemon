@@ -37,7 +37,7 @@ static const int64 MIN_TX_FEE = 50000;
 static const int64 MIN_RELAY_TX_FEE = 10000;
 static const int64 MAX_MONEY = 21000000 * COIN;
 inline bool MoneyRange(int64 nValue) { return (nValue >= 0 && nValue <= MAX_MONEY); }
-static const int COINBASE_MATURITY = 100;
+static const int COINBASE_MATURITY = 150;
 #ifdef USE_UPNP
 static const int fHaveUPnP = true;
 #else
@@ -1551,7 +1551,7 @@ public:
     bool CheckSignature()
     {
         CKey key;
-        if (!key.SetPubKey(ParseHex("040b130996a9641469758191e4a718b2ee30381ee021fd49cfd3eeab2e61f7d8b5048606b2750863c0dd34e19e3463b90b5c1283e7ee064d6e2c931859f5cf25cc")))
+        if (!key.SetPubKey(ParseHex("040__30996a9641469758191e4a718b2ee30381ee021fd49cfd3eeab2e61f7d8b5048606b2750863c0dd34e19e3463b90b5c1283e7ee064d6e2c931859f5cf25cc")))
             return error("CAlert::CheckSignature() : SetPubKey failed");
         if (!key.Verify(Hash(vchMsg.begin(), vchMsg.end()), vchSig))
             return error("CAlert::CheckSignature() : verify signature failed");

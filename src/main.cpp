@@ -723,14 +723,16 @@ uint256 static GetOrphanRoot(const CBlock* pblock)
 
 int64 static GetBlockValue(int nHeight, int64 nFees)
 {
-    //int64 nSubsidy = 50 * COIN;
-    int64 nSubsidy = (GetArgIntxx(50,"-Subsidy") * COIN);
+    //int64 nSubsidy = 25 * COIN;
+    int64 nSubsidy = (GetArgIntxx(25,"-Subsidy") * COIN);
+/*
     if (mapArgs.count("-custom_inflation"))
     {
         if (nHeight>GetArgIntxx(100,"-inflation_triger"))
             nSubsidy = GetArgIntxx(.01,"-post_Subsidy") * COIN;
         printf("nSubsidy before shift =   %lu  GetArgInt-Subsidy = %u or %lu\n",nSubsidy,GetArgIntxx(50,"-Subsidy"),GetArgIntxx(50,"-Subsidy"));
     }
+*/
     // Subsidy is cut in half every 4 years no more :)
     //nSubsidy >>= (nHeight / 210000);
     //nSubsidy >>= (nHeight / (GetMaxMoney()/COIN/100));
@@ -757,7 +759,7 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast)
 
 	 // Go back the full period unless it's the first retarget after genesis. Code courtesy of Art Forz
     int blockstogoback = nInterval-1;
-    if(GetBoolArg("-enablefullretargetperiod") && ((pindexLast->nHeight+1) != nInterval))
+    if(GetBoolArg("-enablefullretargetperiod", true) && ((pindexLast->nHeight+1) != nInterval))
         blockstogoback = nInterval;
 
 	    // Go back by what we want to be 14 days worth of blocks
@@ -1595,20 +1597,14 @@ bool LoadBlockIndex(bool fAllowNew)
         }
         else
         {
-            hashGenesisBlock = uint256("0x00000007199508e34a9ff81e6ec0c477a4cccff2a4767a8eee39c11db367b008");
+            hashGenesisBlock = uint256("0x002a91713910bc96eb0edf237fcd2799d7a01186e1e96023e860bc70b3916200");
             printf("testnet original hashGenesisBlock assigned for ver 2.20.0 \n");
         }
-        //bnProofOfWorkLimit = CBigNum(~uint256(0) >> 28);
-        bnProofOfWorkLimit = CBigNum(~uint256(0) >> GetArgIntxx(28,"-ProofOfWorkLimit"));
-        pchMessageStart[0] = GetCharArg(0xfa,"-pscMessageStart0");
-        pchMessageStart[1] = GetCharArg(0xbf,"-pscMessageStart1");
-        pchMessageStart[2] = GetCharArg(0xb5,"-pscMessageStart2");
-        pchMessageStart[3] = GetCharArg(0xda,"-pscMessageStart3");
-
-        //pchMessageStart[0] = 0xfa;
-        //pchMessageStart[1] = 0xbf;
-        //pchMessageStart[2] = 0xb5;
-        //pchMessageStart[3] = 0xda;
+        bnProofOfWorkLimit = CBigNum(~uint256(0) >> GetArgIntxx(20,"-ProofOfWorkLimit"));
+        pchMessageStart[0] = GetCharArg(0xf9,"-pscMessageStart0");
+        pchMessageStart[1] = GetCharArg(0xdb,"-pscMessageStart1");
+        pchMessageStart[2] = GetCharArg(0xf9,"-pscMessageStart2");
+        pchMessageStart[3] = GetCharArg(0xdb,"-pscMessageStart3");
     }
     printf("hashGenesisBlock is now ");
     printf("%s\n", hashGenesisBlock.ToString().c_str());
@@ -1637,7 +1633,7 @@ bool LoadBlockIndex(bool fAllowNew)
         //   vMerkleTree: 4a5e1e
 
         // Genesis block
-        const char* pszTimestamp = "The Times 03/Jan/2009 Chancellor on brink of second bailout for banks";
+        const char* pszTimestamp = "\"nytimes.com 10/1/2011 - Police Arrest Over 700 Protesters on Brooklyn Bridge\"";
         if (fTestNet_config && mapArgs.count("-pszTimestamp"))
         {
             pszTimestamp = mapArgs["-pszTimestamp"].c_str();
@@ -1674,9 +1670,9 @@ bool LoadBlockIndex(bool fAllowNew)
 
         if (fTestNet)
         {
-            block.nTime    = 1296688602;
-            block.nBits    = 0x1d07fff8;
-            block.nNonce   = 384568319;
+            block.nTime    = 1317529878;
+            block.nBits    = 0x1e0ffff0;
+            block.nNonce   = 385610221;
         }
 
        if (fTestNet_config && mapArgs.count("-block_nTime"))
@@ -1749,7 +1745,7 @@ bool LoadBlockIndex(bool fAllowNew)
         }
         else
         {
-            assert(block.hashMerkleRoot == uint256("0x4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"));
+            assert(block.hashMerkleRoot == uint256("0x40a627262ed716f0f3d5104315fe0b600bf8e32a021929299163f74151fa52b1"));
         }
         block.print();
         printf("block.GetHash() = %s \n", block.GetHash().ToString().c_str());
