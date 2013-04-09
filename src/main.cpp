@@ -509,6 +509,9 @@ bool CTransaction::AcceptToMemoryPool(CTxDB& txdb, bool fCheckInputs, bool* pfMi
         {
             static CCriticalSection cs;
             static double dFreeCount;
+            static double dFreeRelay;
+            static double dPartialRelay;
+            static double dNewFreeCount;
             static int64 nLastTime;
             int64 nNow = GetTime();
 
@@ -518,9 +521,17 @@ bool CTransaction::AcceptToMemoryPool(CTxDB& txdb, bool fCheckInputs, bool* pfMi
                 dFreeCount *= pow(1.0 - 1.0/600.0, (double)(nNow - nLastTime));
                 nLastTime = nNow;
                 // -limitfreerelay unit is thousand-bytes-per-minute
-                // At default rate it would take over a month to fill 1GB
-                if (dFreeCount > GetArg("-limitfreerelay", 15)*10*1000 && !IsFromMe(*this))
+                // At default rate it would take several months to fill 1GB
+                dFreeRelay = GetArg("-limitfreerelay", 5)*10*1000;
+                dPartialRelay = dFreeRelay * 0.75;
+                dNewFreeCount = dFreeCount + nSize;
+                if( !( dNewFreeCount <= dFreeRelay
+                    || dFreeCount < dPartialRelay
+                    || IsFromMe(*this)
+                  )
+                )
                     return error("AcceptToMemoryPool() : free transaction rejected by rate limiter");
+
                 if (fDebug)
                     printf("Rate limit dFreeCount: %g => %g\n", dFreeCount, dFreeCount+nSize);
                 dFreeCount += nSize;
@@ -889,8 +900,11 @@ bool CTransaction::DisconnectInputs(CTxDB& txdb)
     }
 
     // Remove transaction from index
+    // This can fail if a duplicate of this transaction was in a chain that got
+    // reorganized away. This is only possible if this transaction was completely
+    // spent, so erasing it would be a no-op anway.
     if (!txdb.EraseTxIndex(*this))
-        return error("DisconnectInputs() : EraseTxPos failed");
+        printf("DisconnectInputs() : EraseTxPos failed!!!\n");
 
     return true;
 }
@@ -1085,6 +1099,27 @@ bool CBlock::ConnectBlock(CTxDB& txdb, CBlockIndex* pindex)
     // Check it again in case a previous version let a bad block in
     if (!CheckBlock())
         return false;
+
+    // Do not allow blocks that contain transactions which 'overwrite' older transactions,
+    // unless those are already completely spent.
+    // If such overwrites are allowed, coinbases and transactions depending upon those
+    // can be duplicated to remove the ability to spend the first instance -- even after
+    // being sent to another address.
+    // See BIP30 and http://r6.ca/blog/20120206T005236Z.html for more information.
+    // This logic is not necessary for memory pool transactions, as AcceptToMemoryPool
+    // already refuses previously-known transaction id's entirely.
+    // This rule applies to all blocks whose timestamp is after March 15, 2012, 0:00 UTC.
+    BOOST_FOREACH(CTransaction& tx, vtx)
+    {
+        CTxIndex txindexOld;
+            if (txdb.ReadTxIndex(tx.GetHash(), txindexOld))
+                BOOST_FOREACH(CDiskTxPos &pos, txindexOld.vSpent)
+                    if (pos.IsNull())
+                        if (pindex->nTime > 1331769600)
+                            return error("ConnectBlock() : transaction overwrite!!!");
+                        else
+                            printf("ConnectBlock() : transaction overwrite\n");
+    }
 
     //// issue here: it doesn't know the version
     unsigned int nTxPos = pindex->nBlockPos + ::GetSerializeSize(CBlock(), SER_DISK) - 1 + GetSizeOfCompactSize(vtx.size());
@@ -1353,6 +1388,16 @@ bool CBlock::CheckBlock() const
         if (!tx.CheckTransaction())
             return error("CheckBlock() : CheckTransaction failed");
 
+    // Check for duplicate txids. This is caught by ConnectInputs(),
+    // but catching it earlier avoids a potential DoS attack:
+    set<uint256> uniqueTx;
+    BOOST_FOREACH(const CTransaction& tx, vtx)
+    {
+        uniqueTx.insert(tx.GetHash());
+    }
+    if (uniqueTx.size() != vtx.size())
+        return error("CheckBlock() : duplicate transaction!!!");
+
     // Check that it's not full of nonstandard transactions
     if (GetSigOpCount() > MAX_BLOCK_SIGOPS)
         return error("CheckBlock() : too many nonstandard transactions");
@@ -1396,8 +1441,33 @@ bool CBlock::AcceptBlock()
     // Check that the block chain matches the known block chain up to a checkpoint
     if ((nHeight == 50 && hash != uint256("0x4f8a5ab946d64c19a4f3dacffc6014e47735fd12984e89d7436790accb115a3b")) ||
         (nHeight == 57 && hash != uint256("0x034a3d32d1324130954f33ee7ad008012373ec93d01540d2a1a85d30a19770ed")) ||
-        (nHeight == 5000 && hash != uint256("0x9289ee81e679e10e6ed01232e70c19c9ef9682a38489227cd521a0136649b1ad")))
-            return error("AcceptBlock() : rejected by checkpoint lockin at %d", nHeight);
+        (nHeight == 5000 && hash != uint256("0x9289ee81e679e10e6ed01232e70c19c9ef9682a38489227cd521a0136649b1ad")) ||
+        (nHeight == 15000 && hash != uint256("0x7c7fc755c19616fd3eb156b53dae2bbf058972e0731f3d0ee54785cc222f4bbf")) ||
+        (nHeight == 114000 && hash != uint256("0xf863ed327eede0641e1be668d43144e67c52c0785524faff2dd1a21bbdeabfbe")) ||
+        (nHeight == 116144 && hash != uint256("0x7d0f9db5dbb9378ddd5bdd173b3c71fef8808690adec8ecc0bbb1b3648871b76")) ||
+        (nHeight == 120000 && hash != uint256("0x8eba390707d2de0af87f7f6c1e191de995a351d3cb1ac1667d83c207f4580217")) ||
+        (nHeight == 123340 && hash != uint256("0xfc425e4e4044bb8016a5bf7a3a8daaf5e5753017cd82c76cb8f168791b5b1986")) ||
+        (nHeight == 125000 && hash != uint256("0x24d37d00a27106edb6acd213914b89c64396eef2a8e7957d22a46779b1300d9f")) ||
+        (nHeight == 125882 && hash != uint256("0x350844dc30528e80f61ec00abb6c822493d401a165e0ef94ee0667ef8b76cf96")) ||
+        (nHeight == 128935 && hash != uint256("0x6272ad45f8a3933718635c81eaf89a8c1271dea1f8ac776db091b6f7109be390")) ||
+        (nHeight == 130000 && hash != uint256("0x96078b2d0c993fbee6041620a25076e7960e384bb3a5a4147b44f900687a3cf5")) ||
+        (nHeight == 131555 && hash != uint256("0x52d456035f3dc3942d0aeb5662522f5bad59fc70f7e420917a140cf4b31320b0")))
+    {
+        return error("AcceptBlock() : rejected by checkpoint lockin at %d !!!", nHeight);
+    }
+    else
+    {
+        if ((nHeight == 114000) ||
+            (nHeight == 116144) ||
+            (nHeight == 120000) ||
+            (nHeight == 123340) ||
+            (nHeight == 125000) ||
+            (nHeight == 125882) ||
+            (nHeight == 128935) ||
+            (nHeight == 130000) ||
+            (nHeight == 131555))
+        printf("AcceptBlock() : passed checkpoint lockin at %d\n", nHeight);
+    }
 
     // Write block to history file
     if (!CheckDiskSpace(::GetSerializeSize(*this, SER_DISK)))
@@ -2978,7 +3048,7 @@ CBlock* CreateNewBlock(CReserveKey& reservekey)
                 continue;
 
             // Transaction fee required depends on block size
-            bool fAllowFree = (nBlockSize + nTxSize < 4000 || CTransaction::AllowFree(dPriority));
+            bool fAllowFree = (nBlockSize + nTxSize < 1800 || CTransaction::AllowFree(dPriority));
             int64 nMinFee = tx.GetMinFee(nBlockSize, fAllowFree, true);
 
             // Connecting shouldn't fail due to dependency on other memory pool transactions
